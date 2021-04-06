@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 import matplotlib.pyplot as plt
+from PIL import Image
 
 #加载csi文件
 def load_csi(path, num_tones = 114, nc = 2, nr = 3) :
@@ -74,4 +75,15 @@ def batch_convert(mode, begin, end) :
         csi_matrix = diff_phase_matrix(csi_phase, csi_time)
         #matrix = (csi_matrix + np.pi) / (2 * np.pi)
         convertToImg(dst_path, csi_matrix)
+    return 
+
+#批量压缩114*114
+def batch_resize(mode, begin, end) :
+    for i in range(begin, end, 2) :
+        src_path = 'img/' + mode + '/data_' + str(i) + '.jpeg'
+        dst_path = 'gesture_recognition/pic/' + mode + '/data_' + str(i) + '.jpeg'
+        print('processing ' + src_path)
+        im = Image.open(src_path)
+        im2 = im.resize((114, 114))
+        im2.save(dst_path)
     return 

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy import interpolate
+from scipy import interpolate, signal
 import matplotlib.pyplot as plt
 from PIL import Image
 
@@ -28,7 +28,8 @@ def load_csi(path, num_tones = 114, nc = 2, nr = 3) :
     for csi in csi_series :
         csi = csi.transpose()
         angle_csi_temp = np.angle(csi)
-        amp_csi_temp = abs(csi)
+        #amp_csi_temp = abs(csi)
+        amp_csi_temp = 20 * np.log(abs(csi)+1)#db
         csi_phase = np.concatenate((csi_phase, np.expand_dims(angle_csi_temp, axis=0)))
         csi_amp = np.concatenate((csi_amp, np.expand_dims(amp_csi_temp, axis=0)))
 
@@ -82,6 +83,12 @@ def diff_phase_matrix(csi_phase, csi_time, csi_amp) :
                 am_temp = csi_amatrix_temp[i][0][j][k] * csi_amatrix_temp[i][1][j][k]
         csi_matrix[i] = matrix_temp.transpose()
         csi_amatrix[i] = am_temp.transpose()
+    #csi_amatrix = 20 * np.log(csi_amatrix)#db
+    b, a = signal.butter(4, 0.8, 'lowpass',analog=False)
+    for i in range(3):
+        for j in range(114):
+            amplitude_temp = signal.filtfilt(b, a, csi_amatrix.transpose()[i][j],axis=0)
+            csi_amatrix.transpose()[i][j] = amplitude_temp
     maxv, minv = get_mValue(csi_amatrix.transpose())
     csi_amatrix = (csi_amatrix - minv) / (maxv - minv)
     return csi_matrix, csi_amatrix
@@ -130,9 +137,9 @@ def batch_convert(mode, begin, end) :
         csi_matrix, csi_amatrix = diff_phase_matrix(csi_phase, csi_time, csi_amp)
         #matrix = (csi_matrix + np.pi) / (2 * np.pi)
         #convertToImg(dst_path, csi_matrix) #DOWN!
-        #convertToImgC(dst_pathC, csi_amatrix)#DOWN!
-        convertToImgA(dst_pathA, csi_matrix, csi_amatrix)
-        convertToImgB(dst_pathB, csi_matrix, csi_amatrix)
+        convertToImgC(dst_pathC, csi_amatrix)#DOWN!
+       # convertToImgA(dst_pathA, csi_matrix, csi_amatrix)
+        #convertToImgB(dst_pathB, csi_matrix, csi_amatrix)
     return 
 
 #批量压缩114*114
